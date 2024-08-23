@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <string>
+#include "symbols.h"
 
 char asRegister(std::string arg){
     if(arg[0] != 'r'){
@@ -24,7 +25,7 @@ int main(){
         std::string line;
         std::getline(sourceStream, line);
        
-        if(line.length() == 0) break;
+        if(line[0] == ';' || line.empty()) continue; // skip comments
 
         int firstSpace = line.find(' ');
         int secondSpace = line.find(' ', firstSpace+1);
@@ -43,7 +44,7 @@ int main(){
             char value = (char)std::stoi(arg2);
             std::cout << "Initializing register " << reg << " with value " << value <<  '\n';
 
-            binStream << (char)((1 << 4) | reg);
+            binStream << (char)((INIT << 4) | reg);
             binStream << value;
 
         }
@@ -51,7 +52,7 @@ int main(){
             char destReg = (char) asRegister(arg1);
             char srcReg = (char) asRegister(arg2);
 
-            binStream << (char)((2 << 4) | destReg);
+            binStream << (char)((MOV << 4) | destReg);
             binStream << (char)(srcReg << 4);
 
             std::cout << "Moving value from register " << srcReg << " to register " << destReg << '\n';
@@ -59,8 +60,15 @@ int main(){
         else if(keyword == "out"){
             char srcReg = asRegister(arg1);
 
-            binStream << (char)((3 << 4) | srcReg);
+            binStream << (char)((OUT << 4) | srcReg);
             binStream << (char)0;
+        }
+        else if(keyword == "add"){
+            char baseReg = asRegister(arg1);
+            char addentReg = asRegister(arg2);
+
+            binStream << (char)((ADD << 4) | baseReg);
+            binStream << (char)(addentReg << 4);
         }
         else{
             std::cout << "Error: Keyword '" << keyword << "' is not defined\n";
