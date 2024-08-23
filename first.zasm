@@ -1,2 +1,3 @@
 init r4 6
 mov r6 r4
+out r6 7
