@@ -5,12 +5,16 @@
 #include <stdio.h>
 #include <string>
 
-int asRegister(std::string arg){
+char asRegister(std::string arg){
     if(arg[0] != 'r'){
         std::cout << "Error: Expected register reference but got '" << arg << "'\n";
         exit(1);
     }
-    return std::stoi(arg.substr(1));
+    int v = std::stoi(arg.substr(1));
+    if(v > 15){
+        std::cout << "Error: Referenced register " << v << "but only 0 to 15 are available\n";
+    }
+    return (char) v;
 }
 
 int main(){
@@ -19,7 +23,8 @@ int main(){
     while(!sourceStream.eof()){
         std::string line;
         std::getline(sourceStream, line);
-        
+       
+        if(line.length() == 0) break;
 
         int firstSpace = line.find(' ');
         int secondSpace = line.find(' ', firstSpace+1);
@@ -34,29 +39,34 @@ int main(){
 
         if(keyword == "init"){
             
-            int reg = asRegister(arg1);
-            int value = std::stoi(arg2);
+            char reg = (char)asRegister(arg1);
+            char value = (char)std::stoi(arg2);
             std::cout << "Initializing register " << reg << " with value " << value <<  '\n';
+
+            binStream << (char)((1 << 4) | reg);
+            binStream << value;
 
         }
         else if(keyword == "mov"){
             char destReg = (char) asRegister(arg1);
             char srcReg = (char) asRegister(arg2);
 
-            char firstByte;
-            char secondByte;
+            binStream << (char)((2 << 4) | destReg);
+            binStream << (char)(srcReg << 4);
 
-            firstByte = (0b0010 << 4) | destReg;
-            secondByte = srcReg << 4;
-
-            binStream << firstByte;
-            binStream << secondByte;
-            std::cout << "Instruction bytes: " << (int)firstByte << ", " << (int) secondByte << '\n';
             std::cout << "Moving value from register " << srcReg << " to register " << destReg << '\n';
+        }
+        else if(keyword == "out"){
+            char srcReg = asRegister(arg1);
+
+            binStream << (char)((3 << 4) | srcReg);
+            binStream << (char)0;
         }
         else{
             std::cout << "Error: Keyword '" << keyword << "' is not defined\n";
             exit(1);
         }
     }
+    binStream.close();
+    sourceStream.close();
 }
