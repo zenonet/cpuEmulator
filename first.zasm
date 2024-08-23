@@ -1,3 +1,8 @@
-init r4 6
-mov r6 r4
-out r6 7
+
+start:
+init r2 6
+init r3 5
+mov r4 r2
+add r4 r3
+out r4 7
+jmp start

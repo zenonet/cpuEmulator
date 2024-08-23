@@ -1,7 +1,9 @@
+#include <cctype>
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <stdio.h>
 #include <string>
 #include "symbols.h"
@@ -21,11 +23,34 @@ char asRegister(std::string arg){
 int main(){
     std::ifstream sourceStream("first.zasm");
     std::ofstream binStream("first.bin");
+
+    std::map<std::string, int> labels;
+    int instructionIndex = 0;
     while(!sourceStream.eof()){
+
+        if(instructionIndex > 255){
+            std::cout << "Error: Exceeded maximum instruction index based on max instruction pointer value (255)\n";
+        }
         std::string line;
         std::getline(sourceStream, line);
        
         if(line[0] == ';' || line.empty()) continue; // skip comments
+
+        // Check for label definition
+        int colonIndex = line.find(':');
+        if(colonIndex != std::string::npos){
+            for(int i=0;i<colonIndex;i++){
+                if(line[i] == ';') goto nvm;
+                if(!isalnum(line[i])){
+                    std::cout << "Error: Invalid label name\n";
+                    exit(1);
+                }
+            }
+
+            labels[line.substr(0, colonIndex)] = instructionIndex;
+            continue;
+        }
+nvm:
 
         int firstSpace = line.find(' ');
         int secondSpace = line.find(' ', firstSpace+1);
@@ -70,10 +95,19 @@ int main(){
             binStream << (char)((ADD << 4) | baseReg);
             binStream << (char)(addentReg << 4);
         }
+        else if(keyword == "jmp"){
+            if(labels.find(arg1) == labels.end()){ // TODO: Allow jumping to labels after the jump instruction
+                std::cout << "Error: Trying to jump to non existing label " << arg1 << "\n";
+                exit(1);
+            }
+            binStream << (char)(JMP << 4);
+            binStream << (char) labels[arg1];
+        }
         else{
             std::cout << "Error: Keyword '" << keyword << "' is not defined\n";
             exit(1);
         }
+        instructionIndex++;
     }
     binStream.close();
     sourceStream.close();

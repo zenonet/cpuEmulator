@@ -49,6 +49,11 @@ int main(){
 
             registers[baseReg] += registers[addentReg];
         }
+        else if(instructionPtr == JMP){
+            char destination = program[instructionPtr*2+1];
+            instructionPtr = destination;
+            continue;
+        }
 
         instructionPtr++;
     }
